@@ -5,10 +5,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CommentAnalyzer {
+public class CommentAnalyzer extends Thread {
+	private Thread t;
 	
 	private File file;
 	
@@ -16,28 +18,33 @@ public class CommentAnalyzer {
 		this.file = file;
 	}
 	
+	public void run() {
+		analyze();
+	}
+	
 	public Map<String, Integer> analyze() {
 		
 		Map<String, Integer> resultsMap = new HashMap<>();
+		
+		Map<String, String> testMap = new HashMap<>();
+		// Use the Header and the key and the second value as the comparable value
+		testMap.put("MOVER_MENTIONS", "mover");
+		testMap.put("SHAKER_MENTIONS", "shaker");
+		testMap.put("QUESTIONS", "?");
+		testMap.put("SPAM", "http");
 		
 		try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
 			
 			String line = null;
 			while ((line = reader.readLine()) != null) {
-				
+
 				if (line.length() < 15) {
 					
 					incOccurrence(resultsMap, "SHORTER_THAN_15");
 
-				} else if (line.contains("Mover")) {
-
-					incOccurrence(resultsMap, "MOVER_MENTIONS");
+				} 
 				
-				} else if (line.contains("Shaker")) {
-
-					incOccurrence(resultsMap, "SHAKER_MENTIONS");
-				
-				}
+				containesTest(testMap, resultsMap, line);
 			}
 			
 		} catch (FileNotFoundException e) {
@@ -62,5 +69,21 @@ public class CommentAnalyzer {
 		countMap.putIfAbsent(key, 0);
 		countMap.put(key, countMap.get(key) + 1);
 	}
-
+	
+	private void containesTest(Map<String, String> testMap, Map<String, Integer> resultsMap, String line ) {
+		testMap.forEach((header, compare) -> {
+			if(line.toLowerCase().contains(compare)) 
+			{
+				incOccurrence(resultsMap, header);
+			}
+			});
+	}
+	
+	public void start() {
+		if(t == null) {
+			t = new Thread (this);
+			t.start();
+		}
+	}
+	
 }

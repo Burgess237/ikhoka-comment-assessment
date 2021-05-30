@@ -4,21 +4,29 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Main {
+public class Main extends Thread{
 
 	public static void main(String[] args) {
+		
 		
 		Map<String, Integer> totalResults = new HashMap<>();
 				
 		File docPath = new File("docs");
 		File[] commentFiles = docPath.listFiles((d, n) -> n.endsWith(".txt"));
-		
+
 		for (File commentFile : commentFiles) {
-			
 			CommentAnalyzer commentAnalyzer = new CommentAnalyzer(commentFile);
+			commentAnalyzer.start();
+				try {
+					commentAnalyzer.join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			
+
 			Map<String, Integer> fileResults = commentAnalyzer.analyze();
 			addReportResults(fileResults, totalResults);
-						
+			
 		}
 		
 		System.out.println("RESULTS\n=======");
@@ -31,9 +39,14 @@ public class Main {
 	 * @param target the target map
 	 */
 	private static void addReportResults(Map<String, Integer> source, Map<String, Integer> target) {
-
 		for (Map.Entry<String, Integer> entry : source.entrySet()) {
-			target.put(entry.getKey(), entry.getValue());
+			if(target.get(entry.getKey()) == null) {
+				target.put(entry.getKey(), entry.getValue());
+			} else {
+				target.put(entry.getKey(), target.get(entry.getKey()) + entry.getValue());
+			}
+			
+			
 		}
 		
 	}
